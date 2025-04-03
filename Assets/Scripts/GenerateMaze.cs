@@ -19,9 +19,10 @@ public class GenerateMaze : MonoBehaviour
 
     [SerializeField]
     GameObject[] boostPrefab;   // Префаб буста
-    
+
     [SerializeField] private GameObject buter;
     [SerializeField] private int buterAmount = 10;
+    [SerializeField] private int newButerAmount = 5;
 
     // The grid.
     Room[,] rooms = null;
@@ -96,7 +97,7 @@ public class GenerateMaze : MonoBehaviour
 
         var roomsHolder = new GameObject("Rooms");
         roomsHolder.transform.parent = transform;
-        
+
         for (int i = 0; i < numX; ++i)
         {
             for (int j = 0; j < numY; ++j)
@@ -114,10 +115,10 @@ public class GenerateMaze : MonoBehaviour
         SetCamera();  // Устанавливаем начальную позицию камеры
 
         CreateMaze();
-        
+
         // updating obstacles
         AstarPath.active.Scan();
-        
+
 
         // Устанавливаем игрока в центр лабиринта
         Vector3 playerStartPos = new Vector3(mazePosition.x + (numX / 2) * roomWidth, mazePosition.y + (numY / 2) * roomHeight, 0);
@@ -132,21 +133,30 @@ public class GenerateMaze : MonoBehaviour
 
         // Создаем бусты
         CreateBoosts();
-        
+
         //creating buters
+        Buter.Amount = buterAmount;
         CreateButers(buterAmount);
-        
-        
+
+    }
+
+    private void Update()
+    {
+        if (Buter.Amount == 0)
+        {
+            Buter.Amount = newButerAmount;
+            CreateButers(newButerAmount);
+        }
     }
 
     private void CreateBoosts()
     {
         // Количество бустов, которое нужно создать (например, 3)
         int boostCountToCreate = 3;
-        
+
         var boostsHolder = new GameObject("Boosts");
         boostsHolder.transform.parent = transform;
-        
+
         for (int i = 0; i < boostCountToCreate; i++)
         {
             // Случайно выбираем координаты комнаты для буста
@@ -167,7 +177,7 @@ public class GenerateMaze : MonoBehaviour
     {
         var butersHolder = new GameObject("Buters");
         butersHolder.transform.parent = transform;
-        
+
         for (int i = 0; i < amount; i++)
         {
             CreateButer(butersHolder.transform);
@@ -176,18 +186,21 @@ public class GenerateMaze : MonoBehaviour
 
     private void CreateButer(Transform parent)
     {
-            // Случайно выбираем координаты комнаты для buter
-            int x = UnityEngine.Random.Range(0, numX);
-            int y = UnityEngine.Random.Range(0, numY);
-            
-            // Устанавливаем buter в случайную комнату
-            Vector3 buterPosition = new Vector3(mazePosition.x + x * roomWidth, mazePosition.y + y * roomHeight, 0.0f);
-            GameObject newButer = Instantiate(buter, buterPosition, Quaternion.identity, parent);
-            newButer.name = "Buter_" + x.ToString() + "_" + y.ToString();
+        // Случайно выбираем координаты комнаты для buter, кроме центра, где игрок
+        int x, y;
+        do
+        {
+            x = UnityEngine.Random.Range(0, numX);
+            y = UnityEngine.Random.Range(0, numY);
+        } while (x == numX / 2 && y == numY / 2);
 
-            var destination = newButer.GetComponent<AIDestinationSetter>();
-            destination.target = player.transform;
-            
+        // Устанавливаем buter в случайную комнату
+        Vector3 buterPosition = new Vector3(mazePosition.x + x * roomWidth, mazePosition.y + y * roomHeight, 0.0f);
+        GameObject newButer = Instantiate(buter, buterPosition, Quaternion.identity, parent);
+        newButer.name = "Buter_" + x.ToString() + "_" + y.ToString();
+
+        var destination = newButer.GetComponent<AIDestinationSetter>();
+        destination.target = player.transform;
     }
 
     public void RemoveRoomWall(int x, int y, Room.Directions dir)
